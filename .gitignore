@@ -1,0 +1,16 @@
+node_modules/
+dist/
+*.tsbuildinfo
+*.log
+npm-debug.log*
+.env
+.env.*
+!.env.example
+.DS_Store
+Thumbs.db
+coverage/
+.vscode/
+.idea/
+
+# local scratch
+_to_delete/
