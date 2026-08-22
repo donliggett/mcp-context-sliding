@@ -75,7 +75,7 @@ npm test
 ```
 
 ```bash
-node dist/index.js --ingest-root D:/Projects
+node dist/index.js --ingest-root ./sources
 ```
 
 Or explore it interactively:
@@ -97,14 +97,23 @@ via **Program → Install → Edit mcp.json**, then reload LM Studio.
     "context": {
       "command": "node",
       "args": [
-        "D:/Repos/MCPTools/Context-SlidingWindow/mcp-context-sliding/dist/index.js",
-        "--ingest-root", "D:/Projects",
+        "/absolute/path/to/mcp-context-sliding/dist/index.js",
+        "--ingest-root", "/absolute/path/to/your/project",
         "--budget", "4000"
       ]
     }
   }
 }
 ```
+
+> **These two paths must be absolute.** The host spawns the server as a child
+> process with an unpredictable working directory, so a relative path will not
+> resolve. On the command line, where you control the working directory,
+> relative paths like `--ingest-root ./sources` are fine.
+>
+> On Windows either write forward slashes (`C:/Users/you/projects`) or double
+> the backslashes, since a single `\` is an escape character inside a JSON
+> string.
 
 Set `--budget` to roughly half your model's context length. It is the target
 this server packs recalls into, not a limit LM Studio enforces.
@@ -127,7 +136,7 @@ docker build -t mcp-context-window:latest .
       "args": [
         "run", "-i", "--rm", "--init",
         "-v", "mcp-context-data:/data",
-        "-v", "D:/Projects:/ingest:ro",
+        "-v", "/absolute/path/to/your/project:/ingest:ro",
         "-e", "CTX_INGEST_ROOTS=/ingest",
         "--add-host", "host.docker.internal:host-gateway",
         "mcp-context-window:latest", "--stdio"
@@ -140,7 +149,8 @@ docker build -t mcp-context-window:latest .
 Two things that bite here: `-i` is mandatory or the JSON-RPC handshake never
 happens, and the named volume is mandatory or **every restart silently discards
 all stored sessions**. From inside a container `localhost` is the container, so
-the LLM base URL defaults to `host.docker.internal`.
+the LLM base URL defaults to `host.docker.internal`. Docker also requires the
+host side of a `-v` bind mount to be an absolute path.
 
 ---
 
@@ -160,9 +170,9 @@ context_recall      "cookie flag decision" → returns the pinned goal + the dec
 And a document:
 
 ```
-doc_ingest      file_path "D:/logs/build-failure.log"  → doc_kx91, 240 chunks
-doc_search      "OutOfMemory"                          → 3 chunks, 1400 tokens
-doc_window      from 118 to 121                        → the surrounding context
+doc_ingest      file_path "logs/build-failure.log"  → doc_kx91, 240 chunks
+doc_search      "OutOfMemory"                       → 3 chunks, 1400 tokens
+doc_window      from 118 to 121                     → the surrounding context
 ```
 
 The log never entered the model's context. Three targeted reads did.
